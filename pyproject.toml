@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osprey-launcher"
+dynamic = ["version"]
+description = "A desktop launcher for apps, shortcuts, files, folders and web links."
+license = "GPL-3.0-only"
+requires-python = ">=3.9"
+dependencies = ["PySide6-Essentials>=6.7", "PyYAML>=6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.gui-scripts]
+osprey-launcher = "osprey_launcher.app:main"
+
+[tool.setuptools]
+packages = ["osprey_launcher"]
+
+[tool.setuptools.dynamic]
+version = { attr = "osprey_launcher._version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py39"
