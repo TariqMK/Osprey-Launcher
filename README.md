@@ -26,11 +26,21 @@ Works offline. Sends no data. The one exception is a single request for a site's
 
 ## Download
 
-Osprey Launcher will be published for Windows (x64), macOS (Apple silicon) and Linux (x64) on the [Releases page](https://github.com/TariqMK/Osprey-Launcher/releases).
+Download the latest version from the [Releases page](https://github.com/TariqMK/Osprey-Launcher/releases/latest), or from the [Osprey Launcher website](https://tariqmk.github.io/Osprey-Launcher/).
 
-**Note:** No release is published yet. To use the app now, see [Run from source](#run-from-source).
+| System | File | Contents |
+| --- | --- | --- |
+| Windows (x64) | `Osprey-Launcher-vX.Y.Z-windows-x64.exe` | The app, as one file. No installer. |
+| macOS (Apple silicon) | `Osprey-Launcher-vX.Y.Z-macos-arm64.zip` | `Osprey Launcher.app`. |
+| Linux (x64) | `Osprey-Launcher-vX.Y.Z-linux-x64.tar.gz` | The `osprey-launcher` program, as one file. |
 
-**Note:** macOS builds will be unsigned. The first time you open the app, macOS blocks it. To allow it:
+1. Download the file for your system.
+2. Put the app in a folder of your choice. The app creates its data folder next to itself.
+3. Open the app.
+
+The version shows next to the name at the top left of the window.
+
+**Note:** macOS builds are unsigned. The first time you open the app, macOS blocks it. To allow it:
 
 1. Open **System Settings** > **Privacy & Security**.
 2. Scroll to **Security**.
@@ -249,6 +259,8 @@ Retake the screenshots after a change to the window:
 ```bash
 .venv/bin/python assets/make_screenshots.py
 ```
+
+The version in the screenshots is the newest release tag. To show a release you are about to make, add `--version`, for example `--version 1.2.0`.
 
 Rebuild the icon, banner and social card after a change to the icon or tagline:
 

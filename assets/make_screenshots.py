@@ -3,7 +3,11 @@
 Writes assets/screenshots/<view>-light.png and <view>-dark.png at 2x (2000 x 1080 px).
 
 Run from the project root with the project's environment, on Windows, macOS or Linux:
-  .venv/bin/python assets/make_screenshots.py
+  .venv/bin/python assets/make_screenshots.py [--version 1.2.0]
+
+The version in the header is the newest release tag (vX.Y.Z), so the screenshots never show the
+development version. Pass --version to show a release that is about to be made. The version is
+set only inside this script; the source keeps its development version.
 
 Privacy: the app runs on a new temporary data folder with generated sample files, makes no
 network requests, and only its content area is captured (no system title bar or desktop).
@@ -15,7 +19,9 @@ system and reveal which apps are installed on the computer that takes the screen
 from __future__ import annotations
 
 import os
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -28,6 +34,7 @@ sys.path.insert(0, str(ROOT))
 
 from PySide6.QtWidgets import QApplication
 
+import osprey_launcher.app as app_module
 from osprey_launcher.app import APP_NAME, MainWindow
 from osprey_launcher.icons import IconCache, app_icon
 from osprey_launcher.store import Store
@@ -110,7 +117,29 @@ def capture(window: MainWindow, app: QApplication, name: str) -> None:
         print(f"Wrote {path.relative_to(ROOT)} ({image.width()} x {image.height()} px)")
 
 
+def release_version() -> str:
+    """The version to show: --version if given, else the newest vX.Y.Z tag, else the source's."""
+    if "--version" in sys.argv:
+        return sys.argv[sys.argv.index("--version") + 1].lstrip("v")
+    try:
+        tags = subprocess.run(
+            ["git", "tag", "--list"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+    except (OSError, subprocess.CalledProcessError):
+        tags = []
+    plain = [t for t in tags if re.fullmatch(r"v\d+\.\d+\.\d+", t)]
+    if not plain:
+        return app_module.__version__
+    return max(plain, key=lambda t: tuple(int(n) for n in t[1:].split("."))).lstrip("v")
+
+
 def main() -> int:
+    app_module.__version__ = release_version()
+    print(f"Header shows v{app_module.__version__}")
     app = QApplication(sys.argv[:1])
     app.setApplicationName(APP_NAME)
     app.setStyle("Fusion")

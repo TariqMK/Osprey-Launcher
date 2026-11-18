@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -138,28 +139,37 @@ class Tile(QFrame):
                 dot.move(size.width() - 16, size.height() - 16)
             return
 
+        # Icon, name and type are centred. The key and star sit in the top-right corner,
+        # placed directly so they do not push the icon off centre.
         layout.setContentsMargins(12, 12, 12, 12)
-        top = QHBoxLayout()
-        top.setSpacing(0)
-        top.addWidget(icon, 0, Qt.AlignTop)
-        top.addStretch()
+        layout.addWidget(icon, 0, Qt.AlignHCenter | Qt.AlignTop)
+        right = size.width() - 12
+        cap_height = 0
+        if key:
+            cap = QLabel(str(key), self, objectName="keycap")
+            cap.ensurePolished()
+            cap.adjustSize()
+            right -= cap.width()
+            cap.move(right, 12)
+            cap_height = cap.height()
         if star is not None:
-            mark = QLabel(objectName="starMark")
+            mark = QLabel(self, objectName="starMark")
             mark.setPixmap(star)
             mark.setToolTip("Starred")
-            top.addWidget(mark, 0, Qt.AlignTop)
-            top.addSpacing(6)
-        if key:
-            cap = QLabel(str(key))
-            cap.setObjectName("keycap")
-            top.addWidget(cap, 0, Qt.AlignTop)
-        layout.addLayout(top)
+            mark.adjustSize()
+            if key:
+                right -= 6
+            mark.move(
+                right - mark.width(), 12 + max(0, cap_height - mark.height()) // 2
+            )
         layout.addStretch()
 
         if show_name:
             name_label = QLabel()
             name_label.setObjectName("tileName")
             name_label.setProperty("missing", missing and not show_type)
+            name_label.setAlignment(Qt.AlignHCenter)
+            name_label.ensurePolished()  # Measure with the style sheet's font, not the default.
             name_label.setText(
                 QFontMetrics(name_label.font()).elidedText(
                     name, Qt.ElideMiddle, size.width() - 24
@@ -177,14 +187,15 @@ class Tile(QFrame):
         meta_label.setObjectName("tileMeta")
         meta_label.setProperty("missing", missing)
         meta_label.setText("Not found" if missing else meta)
-        meta_row.addWidget(meta_label)
         meta_row.addStretch()
+        meta_row.addWidget(meta_label)
         if missing:
             locate = QPushButton("Locate")
             locate.setObjectName("secondary")
             locate.setCursor(Qt.PointingHandCursor)
             locate.clicked.connect(lambda: self.locate_requested.emit(self.item_id))
             meta_row.addWidget(locate)
+        meta_row.addStretch()
         layout.addLayout(meta_row)
 
     def mousePressEvent(self, event):
@@ -243,6 +254,9 @@ class TileGrid(QWidget):
         self.grid.setContentsMargins(MARGIN, 8, MARGIN, 20)
         self.grid.setSpacing(GAP)
         self.grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        # The layout's minimum width is its current column count. Ignore it, so the scroll
+        # area can make the grid narrower when the window shrinks and the columns reflow.
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         self.indicator = QWidget(self, objectName="dropIndicator")
         self.indicator.setAttribute(Qt.WA_StyledBackground)
         self.indicator.setAttribute(Qt.WA_TransparentForMouseEvents)

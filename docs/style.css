@@ -139,16 +139,18 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
 }
 .tile.hit { background: var(--raised); border-color: rgba(92, 191, 179, 0.55); }
 .tile.enter { opacity: 0; transform: translateY(6px); }
-.tile-top { display: flex; justify-content: space-between; align-items: flex-start; height: 40px; margin-bottom: 10px; }
+.tile { text-align: center; }
+.tile-top { display: flex; justify-content: center; align-items: flex-start; height: 40px; margin-bottom: 10px; }
 .tile-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile-meta { color: var(--t3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile-meta.missing { color: var(--danger); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.tile-meta.missing { color: var(--danger); display: flex; justify-content: center; align-items: center; gap: 6px; }
 .locate {
   font-size: 11px; color: var(--t1); padding: 1px 8px; border-radius: 6px;
   background: var(--raised); border: 1px solid var(--hl); transition: border-color .2s;
 }
 .locate.hit { border-color: var(--acc); }
-.marks { display: flex; align-items: center; gap: 6px; }
+.marks { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; }
+.win-version { color: var(--t3); font-size: 12px; margin: 0 8px 0 -14px; white-space: nowrap; }
 .marks .star { width: 12px; height: 12px; fill: var(--acc); transition: opacity .25s, transform .25s var(--ease); }
 .marks .star.off { opacity: 0; transform: scale(0.4); }
 .key {
@@ -162,7 +164,7 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
 /* File-type icons, drawn in CSS to mirror the system icons in the app */
 .ic { width: 34px; height: 40px; display: block; position: relative; }
 .ic-doc {
-  width: 30px; height: 38px; margin-left: 4px; border-radius: 3px;
+  width: 30px; height: 38px; border-radius: 3px;
   background: linear-gradient(225deg, transparent 8px, #e9e9ec 8px);
 }
 .ic-doc::after {
@@ -279,7 +281,7 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
 @media (max-width: 640px) {
   .wrap { padding-left: 16px; padding-right: 16px; }
   .nav-links { display: none; }
-  #hero-window .wordmark { display: none; }
+  #hero-window .wordmark, #hero-window .win-version { display: none; }
   .tile-meta.missing { flex-wrap: wrap; }
   .nav-row .btn-small { margin-left: auto; }
   .hero { padding-top: 64px; }

@@ -248,7 +248,7 @@
         const date = new Date(rel.published_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
         el("dl-version").textContent = `${rel.tag_name} · ${date}`;
         el("hero-meta").textContent = `${rel.tag_name} · Free · GPL-3.0 · Works offline · No tracking`;
-        el("dl-note").innerHTML = 'Prefer to build it yourself? <a href="https://github.com/TariqMK/Osprey-Launcher#run-from-source">Run it from source</a> with Python 3.9 or later.';
+        el("hero-version").textContent = rel.tag_name;
       })
       .catch(() => { /* No release yet, offline or rate-limited: links already point to the Releases page. */ });
   }
