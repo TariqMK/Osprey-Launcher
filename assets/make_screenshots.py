@@ -1,6 +1,8 @@
-"""Retakes the README screenshots from the real app, filled with made-up sample data.
+"""Retakes the README screenshots and GIF from the real app, filled with made-up sample data.
 
-Writes assets/screenshots/<view>-light.png and <view>-dark.png at 2x (2000 x 1080 px).
+Writes assets/screenshots/<view>-light.png and <view>-dark.png at 2x (2000 x 1080 px) for the
+main, search, starred, data-menu and labels views, and assets/gifs/drag-to-reorder.gif (dark,
+1000 px wide). The GIF needs Pillow, which the "dev" extra installs.
 
 Run from the project root with the project's environment, on Windows, macOS or Linux:
   .venv/bin/python assets/make_screenshots.py [--version 1.2.0]
@@ -24,6 +26,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from io import BytesIO
 from pathlib import Path
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -32,14 +35,27 @@ os.environ["QT_SCALE_FACTOR"] = "2"
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QBuffer, QIODevice, QPoint, QPointF, QRect, Qt
+from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QMenu
+
+try:
+    from PIL import Image
+except ImportError:
+    sys.exit(
+        'Pillow is missing. Install the dev tools first: .venv/bin/pip install -e ".[dev]"'
+    )
 
 import osprey_launcher.app as app_module
 from osprey_launcher.app import APP_NAME, MainWindow
+from osprey_launcher.app import STARRED as STARRED_TAB
 from osprey_launcher.icons import IconCache, app_icon
 from osprey_launcher.store import Store
 
 OUT = ROOT / "assets" / "screenshots"
+GIF_OUT = ROOT / "assets" / "gifs"
+GIF_FPS = 15
+TILE_RADIUS = 12  # Matches the tile corner radius in theme.py.
 SIZE = (1000, 540)  # logical px; saved at 2x
 
 # Made-up sample data. Every name and address here is fictional.
@@ -105,16 +121,140 @@ def build_store(work: Path) -> Store:
     return store
 
 
-def capture(window: MainWindow, app: QApplication, name: str) -> None:
+def capture(window: MainWindow, app: QApplication, name: str, extra=None) -> None:
+    """Save the window content in both themes. extra(image) can paint on top, for example a menu."""
     for theme in ("light", "dark"):
         window.store.set_theme(theme)
         window.apply_theme()
         window.refresh()
         app.processEvents()
         image = window.centralWidget().grab()
+        if extra:
+            extra(image)
         path = OUT / f"{name}-{theme}.png"
         image.save(str(path))
         print(f"Wrote {path.relative_to(ROOT)} ({image.width()} x {image.height()} px)")
+
+
+def item_id(store: Store, name: str) -> str:
+    return next(i.id for t in store.tabs for i in t.items if i.name == name)
+
+
+def paint_data_menu(window: MainWindow, app: QApplication):
+    """Return a painter for capture() that draws the data menu open above its button."""
+
+    def extra(image: QPixmap) -> None:
+        menus: list[QMenu] = []
+        original = window._menu_above
+        window._menu_above = lambda menu, button: menus.append(
+            menu
+        )  # Keep it open, don't block.
+        try:
+            window.data_menu()
+        finally:
+            window._menu_above = original
+        menu = menus[0]
+        button = window.data_button
+        root = window.centralWidget()
+        top_left = button.mapTo(root, QPoint(0, 0))
+        menu.popup(button.mapToGlobal(QPoint(0, 0)))
+        menu.setActiveAction(menu.actions()[-1])  # Highlight "Restore from backup…".
+        app.processEvents()
+        shot = menu.grab()
+        at = top_left - QPoint(0, int(shot.deviceIndependentSize().height()) + 4)
+        painter = QPainter(image)
+        painter.drawPixmap(at, shot)
+        painter.end()
+        menu.close()
+        menu.deleteLater()
+
+    return extra
+
+
+def to_pil(pixmap: QPixmap) -> Image.Image:
+    buffer = QBuffer()
+    buffer.open(QIODevice.WriteOnly)
+    pixmap.save(buffer, "PNG")
+    image = Image.open(BytesIO(bytes(buffer.data()))).convert("RGB")
+    return image.resize((image.width // 2, image.height // 2), Image.LANCZOS)
+
+
+def make_drag_gif(window: MainWindow, app: QApplication) -> None:
+    """Record a tile being dragged to a new place in the Work tab, frame by frame.
+
+    The frames show the same marks the app shows during a real drag: the faded source tile,
+    the tile under the pointer and the accent line where it will land.
+    """
+    store = window.store
+    store.set_theme("dark")
+    window.apply_theme()
+    window.select_tab(store.tabs[0].id)
+    window.refresh()
+    app.processEvents()
+    root, grid = window.centralWidget(), window.grid
+    source = grid.tiles[0]
+    target_index = 4  # Before the fifth tile, measured before the move.
+    grid.show_indicator(target_index)
+    end = grid.indicator.geometry().center()
+    grid.indicator.hide()
+    start = source.geometry().center()
+    lift = source.grab()
+    hotspot = QPoint(lift.width() // 2, lift.height() // 2) / lift.devicePixelRatio()
+
+    frames: list[tuple[Image.Image, int]] = []
+
+    def frame(ms: int, pointer: QPoint | None = None) -> None:
+        app.processEvents()
+        image = root.grab()
+        if pointer is not None:
+            # A real drag pixmap is opaque; give the tile its card colour so nothing shows through.
+            at = grid.mapTo(root, pointer) - hotspot
+            painter = QPainter(image)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(window.palette_values["card"]))
+            painter.drawRoundedRect(QRect(at, source.size()), TILE_RADIUS, TILE_RADIUS)
+            painter.drawPixmap(at, lift)
+            painter.end()
+        frames.append((to_pil(image), ms))
+
+    tick = 1000 // GIF_FPS
+    frame(900)
+    fade = QGraphicsOpacityEffect(source)
+    fade.setOpacity(0.3)
+    source.setGraphicsEffect(fade)
+    frame(200, start)
+    steps = 18
+    for n in range(1, steps + 1):
+        t = n / steps
+        t = t * t * (3 - 2 * t)  # Ease in and out.
+        pointer = (QPointF(start) + (QPointF(end) - QPointF(start)) * t).toPoint()
+        grid.show_indicator(grid.insertion_index(pointer))
+        frame(tick, pointer)
+    frame(400, end)
+    source.setGraphicsEffect(None)
+    grid.indicator.hide()
+    store.move_item(source.item_id, store.tabs[0].id, target_index)
+    window.refresh()
+    frame(1800)
+
+    images = [f for f, _ms in frames]
+    palette = images[0].quantize(colors=128, method=Image.MEDIANCUT)
+    paletted = [im.quantize(palette=palette, dither=Image.NONE) for im in images]
+    GIF_OUT.mkdir(parents=True, exist_ok=True)
+    path = GIF_OUT / "drag-to-reorder.gif"
+    paletted[0].save(
+        path,
+        save_all=True,
+        append_images=paletted[1:],
+        duration=[ms for _f, ms in frames],
+        loop=0,
+        optimize=True,
+    )
+    size = path.stat().st_size / 1_000_000
+    print(
+        f"Wrote {path.relative_to(ROOT)} ({images[0].width} x {images[0].height} px, {size:.1f} MB)"
+    )
 
 
 def release_version() -> str:
@@ -160,6 +300,18 @@ def main() -> int:
         window.search.setText("port")
         capture(window, app, "search")
         window.search.clear()
+
+        window.select_tab(STARRED_TAB)
+        capture(window, app, "starred")
+
+        window.select_tab(store.tabs[0].id)
+        capture(window, app, "data-menu", paint_data_menu(window, app))
+
+        make_drag_gif(window, app)
+
+        store.rename_item(item_id(store, "Meeting notes.docx"), "Monday notes")
+        window.set_display(types=False)
+        capture(window, app, "labels")
 
         window.close()
     finally:

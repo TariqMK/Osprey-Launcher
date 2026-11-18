@@ -1,32 +1,85 @@
 ![Osprey Launcher. Apps, files and links. One Launcher.](assets/banner.png)
 
-Osprey Launcher keeps your apps, shortcuts, files, folders and web links in one window. Group them in tabs. Open any item with one click or one key.
+Open any app, file, folder or web link from one tabbed window, with one click or one key. Works offline. No tracking.
 
-Works offline. Sends no data. The one exception is a single request for a site's icon when you add a link.
+**Contents:** [What it does](#what-it-does) · [Privacy](#privacy) · [Download](#download) · [How to use](#how-to-use) · [For developers](#for-developers)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/main-dark.png">
   <img src="assets/screenshots/main-light.png" alt="Osprey Launcher with the Work tab open: files, folders and a link as numbered tiles, three of them starred, and one tile marked Not found with a Locate button" width="840">
 </picture>
 
-## Features
+## What it does
 
-- Tabs to group items, for example Work, Studio and Home
-- Add items by drag and drop, or with the **Add** button
-- Drag tiles to reorder them, or onto another tab to move them
-- Real system icons for apps, files and folders. Site icons for links
-- Show or hide the name and type under each icon
-- Star items to keep them together in a Starred tab
-- Give items your own names
-- A readable backup of all tabs and items, saved after every change
-- Keys 1 to 9 open the first nine items in the tab
-- Search across all tabs
-- Light and dark themes, or follow the system theme
-- Portable: all data stays in one folder next to the app
+Osprey Launcher holds the apps, shortcuts, files, folders and web links you use every day. Group them in tabs, for example Work, Studio and Home. Each item shows as a tile with its real icon and a number.
+
+Press 1 to 9 to open the first nine items in the open tab, or click a tile. Files open in their default app, folders in your file manager and links in your browser.
+
+### Find anything in a second
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/search-dark.png">
+  <img src="assets/screenshots/search-light.png" alt="Search for port: three results from the Work, Studio and Home tabs, each labelled with its tab and type" width="840">
+</picture>
+
+Search looks through every tab at once. Press Enter to open the first result.
+
+### Drag in, drag around
+
+<img src="assets/gifs/drag-to-reorder.gif" alt="Dragging the Budget 2026.xlsx tile from first place to fourth place in the Work tab: an accent line marks the gap, and the numbers on the tiles update after the drop" width="840">
+
+Drop files, folders, apps or links into the window to add them. Drag a tile to change the order, or onto another tab to move it.
+
+### Your favourites in one place
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/starred-dark.png">
+  <img src="assets/screenshots/starred-light.png" alt="The Starred tab with three starred items from the Work tab: a file, a folder and a link, each labelled with its own tab" width="840">
+</picture>
+
+Star an item and it also shows in the **Starred** tab. It stays in its own tab too.
+
+### Your names, your layout
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/labels-dark.png">
+  <img src="assets/screenshots/labels-light.png" alt="The Work tab with types hidden: smaller tiles show only icons and names, one tile renamed to Monday notes, and a missing item named in red" width="840">
+</picture>
+
+Give any tile your own name. Hide the names or types under the icons to fit more tiles in the window.
+
+### Your data stays with the app
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/data-menu-dark.png">
+  <img src="assets/screenshots/data-menu-light.png" alt="The Stored next to the app menu open at the bottom of the window, with Open data folder and Restore from backup" width="840">
+</picture>
+
+All data stays in one folder next to the app. Copy the app and the folder to another drive or computer, and your tabs come with it.
+
+After every change, the app also saves all tabs and items to a plain text backup. Restore from it at any time, or edit it by hand.
+
+### Light or dark
+
+<img src="assets/screenshots/main-light.png" alt="Osprey Launcher in the light theme" width="415"> <img src="assets/screenshots/main-dark.png" alt="Osprey Launcher in the dark theme" width="415">
+
+Use the light theme, the dark theme, or follow your system setting.
+
+## Privacy
+
+- The app works offline. All features except site icons work with no internet connection.
+- The app has no telemetry, analytics, crash reporting or tracking.
+- No account is needed.
+- All data is stored in the `OspreyLauncher-data` folder next to the app. On macOS this folder is next to `Osprey Launcher.app`. Move the app and this folder together to keep your tabs and items.
+- The folder holds `launcher.json` (tabs, items and settings), `osprey-backup.yaml` (the readable backup) and `icons/` (saved site icons). The backup lists the full paths of your items. Keep this in mind before you share it.
+- The app makes one kind of network connection. When you add a link, it requests the site's icon from that site (`/apple-touch-icon.png`, then `/favicon.ico`). If the site redirects the request to another secure (HTTPS) address, the app follows it. It sends a normal web request with no personal data. The icon is saved in `OspreyLauncher-data/icons` and is not downloaded again.
+- Opening a link opens it in your own browser. The app does not contact the site for this.
 
 ## Download
 
 Download the latest version from the [Releases page](https://github.com/TariqMK/Osprey-Launcher/releases/latest), or from the [Osprey Launcher website](https://tariqmk.github.io/Osprey-Launcher/).
+
+Osprey Launcher runs on Windows (x64), macOS on Apple silicon (M1 or later) and Linux (x64).
 
 | System | File | Contents |
 | --- | --- | --- |
@@ -35,18 +88,30 @@ Download the latest version from the [Releases page](https://github.com/TariqMK/
 | Linux (x64) | `Osprey-Launcher-vX.Y.Z-linux-x64.tar.gz` | The `osprey-launcher` program, as one file. |
 
 1. Download the file for your system.
-2. Put the app in a folder of your choice. The app creates its data folder next to itself.
-3. Open the app.
+2. On macOS, open the `.zip` file to get `Osprey Launcher.app`. On Linux, extract the `.tar.gz` file to get the `osprey-launcher` program.
+3. Put the app in a folder of your choice. The app creates its data folder next to itself.
+4. Open the app.
 
 The version shows next to the name at the top left of the window.
 
-**Note:** macOS builds are unsigned. The first time you open the app, macOS blocks it. To allow it:
+### Opening on macOS
 
-1. Open **System Settings** > **Privacy & Security**.
-2. Scroll to **Security**.
-3. Select **Open Anyway** next to the Osprey Launcher message.
+Osprey Launcher isn't notarised by Apple, so macOS shows a warning the first time you open it. This is expected and doesn't mean the app is harmful.
 
-## Use the app
+1. Open Osprey Launcher and click **Done** on the warning.
+2. Open **System Settings → Privacy & Security**, scroll down to the message saying "Osprey Launcher" was blocked, and click **Open Anyway**.
+3. Enter your password, then click **Open** on the next prompt. You only need to do this once.
+
+<details>
+<summary>If you use Terminal</summary>
+
+You can run this instead:
+
+    xattr -dr com.apple.quarantine "/Applications/Osprey Launcher.app"
+
+</details>
+
+## How to use
 
 ### Add items
 
@@ -123,6 +188,43 @@ Right-click a tile to see these commands:
 | **Add to Starred** / **Remove from Starred** | Adds or removes the star. |
 | **Remove from launcher** | Removes the tile. The file, folder or app is not changed. |
 
+### Fix a moved or deleted item
+
+If a file or folder is moved or deleted, its tile shows **Not found**. When the type line is hidden, the name shows in red. When only icons are shown, a red dot shows in the corner of the tile.
+
+1. Select the tile, or select **Locate** on the tile.
+2. Choose the item's new location.
+
+### Manage tabs
+
+- To add a tab, select **+** next to the tabs and type a name.
+- To rename a tab, right-click it and select **Rename…**.
+- To delete a tab, right-click it and select **Delete tab…**. Then select **Delete**.
+
+**Note:** Deleting a tab removes its tiles from the launcher only. Your files, folders and apps are not changed. The last tab cannot be deleted.
+
+### Search
+
+1. Press **⌘K** or **⌘F** on macOS, or **Ctrl+K** or **Ctrl+F** on Windows and Linux.
+2. Type part of an item's name, file name or web address. Results come from all tabs.
+3. Press **Enter** to open the first result, or press **1** to **9** after you leave the search field.
+4. Press **Esc** to clear the search.
+
+### Show or hide tile labels
+
+Each tile shows the item name and its type under the icon. To hide one or both:
+
+1. Select the grid button at the bottom right of the window.
+2. Select **Show names** or **Show types** to turn it on or off.
+
+Tiles get smaller when a label is hidden. With both labels off, only icons show. The setting applies to all tabs and is saved.
+
+**Note:** To see an item's full name and location, hold the pointer over its tile.
+
+### Change the theme
+
+Select the theme button at the bottom right of the window. Each click changes the theme in this order: **System**, **Light**, **Dark**.
+
 ### Back up and restore
 
 After every change, Osprey Launcher saves a readable backup of all tabs and items. The backup is `osprey-backup.yaml` in the `OspreyLauncher-data` folder next to the app.
@@ -154,59 +256,12 @@ You can edit the backup in a text editor, for example to change names or positio
 
 If the launcher data file is damaged, Osprey Launcher loads the backup when it starts and shows a message. The damaged file is kept in the data folder.
 
-### Fix a moved or deleted item
+## For developers
 
-If a file or folder is moved or deleted, its tile shows **Not found**. When the type line is hidden, the name shows in red. When only icons are shown, a red dot shows in the corner of the tile.
+Building the app yourself or changing it? Everything you need is below.
 
-1. Select the tile, or select **Locate** on the tile.
-2. Choose the item's new location.
-
-### Manage tabs
-
-- To add a tab, select **+** next to the tabs and type a name.
-- To rename a tab, right-click it and select **Rename…**.
-- To delete a tab, right-click it and select **Delete tab…**. Then select **Delete**.
-
-**Note:** Deleting a tab removes its tiles from the launcher only. Your files, folders and apps are not changed. The last tab cannot be deleted.
-
-### Search
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/search-dark.png">
-  <img src="assets/screenshots/search-light.png" alt="Search for port: three results from the Work, Studio and Home tabs, each labelled with its tab and type" width="840">
-</picture>
-
-1. Press **⌘K** on macOS or **Ctrl+K** on Windows and Linux.
-2. Type part of an item's name, file name or web address. Results come from all tabs.
-3. Press **Enter** to open the first result, or press **1** to **9** after you leave the search field.
-4. Press **Esc** to clear the search.
-
-### Show or hide tile labels
-
-Each tile shows the item name and its type under the icon. To hide one or both:
-
-1. Select the grid button at the bottom right of the window.
-2. Select **Show names** or **Show types** to turn it on or off.
-
-Tiles get smaller when a label is hidden. With both labels off, only icons show. The setting applies to all tabs and is saved.
-
-**Note:** To see an item's full name and location, hold the pointer over its tile.
-
-### Change the theme
-
-Select the theme button at the bottom right of the window. Each click changes the theme in this order: **System**, **Light**, **Dark**.
-
-## Privacy
-
-- The app works offline. All features except site icons work with no internet connection.
-- The app has no telemetry, analytics, crash reporting or tracking.
-- No account is needed.
-- All data is stored in the `OspreyLauncher-data` folder next to the app. On macOS this folder is next to `Osprey Launcher.app`. Move the app and this folder together to keep your tabs and items.
-- The folder holds `launcher.json` (tabs, items and settings), `osprey-backup.yaml` (the readable backup) and `icons/` (saved site icons). The backup lists the full paths of your items. Keep this in mind before you share it.
-- The app makes one kind of network connection. When you add a link, it requests the site's icon from that site only (`/apple-touch-icon.png`, then `/favicon.ico`). It sends a normal web request with no personal data. The icon is saved in `OspreyLauncher-data/icons` and is not downloaded again.
-- Opening a link opens it in your own browser. The app does not contact the site for this.
-
-## Run from source
+<details>
+<summary><strong>Run from source</strong></summary>
 
 Requires Python 3.9 or later.
 
@@ -236,7 +291,10 @@ When run from source, the data folder is `OspreyLauncher-data` in the project fo
 
 **Note:** On Linux, `.desktop` shortcuts open with `gio launch`. Install GLib if `gio` is not available.
 
-## Tests
+</details>
+
+<details>
+<summary><strong>Run the tests</strong></summary>
 
 Run all tests:
 
@@ -250,15 +308,22 @@ Check code style:
 .venv/bin/ruff check .
 ```
 
-## Update the Screenshots
+**Note:** The grid tests build real Qt widgets. On a Linux machine with no display, install the Qt system libraries (`libegl1`, `libgl1`, `libxkbcommon0`, `libxkbcommon-x11-0`, `libfontconfig1`, `libdbus-1-3`) and run with `QT_QPA_PLATFORM=offscreen`.
+
+</details>
+
+<details>
+<summary><strong>Update the screenshots</strong></summary>
 
 The screenshots use made-up sample data in a temporary folder. Your own tabs and items are not used.
 
-Retake the screenshots after a change to the window:
+Retake the screenshots and the drag GIF after a change to the window:
 
 ```bash
 .venv/bin/python assets/make_screenshots.py
 ```
+
+The script writes the screenshots in light and dark to `assets/screenshots/`, and `drag-to-reorder.gif` in the dark theme to `assets/gifs/`. The GIF needs Pillow, which the development tools install.
 
 The version in the screenshots is the newest release tag. To show a release you are about to make, add `--version`, for example `--version 1.2.0`.
 
@@ -270,7 +335,10 @@ Rebuild the icon, banner and social card after a change to the icon or tagline:
 
 On Windows, use `.venv\Scripts\python` instead of `.venv/bin/python`.
 
-## Creating a Release
+</details>
+
+<details>
+<summary><strong>Creating a Release</strong></summary>
 
 The **Release** workflow builds Osprey Launcher for Windows (x64), macOS (Apple silicon) and Linux (x64), and publishes a GitHub release. It runs only when you start it. It needs no secrets.
 
@@ -298,9 +366,9 @@ The release is created only if all three builds succeed. The workflow never comm
 
 The release notes are generated by GitHub as a placeholder. Replace them with written notes after the release.
 
-**Note:** The macOS and Windows builds are not signed. See [Download](#download) for how to open the app on macOS.
+**Note:** The macOS and Windows builds are not signed. See [Opening on macOS](#opening-on-macos) for how to open the app on macOS.
 
-### Branch builds
+**Branch builds**
 
 To test work on a branch without making a normal release, select that branch in **Use workflow from**.
 
@@ -311,8 +379,13 @@ To test work on a branch without making a normal release, select that branch in 
 
 When the branch is ready, merge it into `main` and run a normal release from `main`.
 
-## Licence
+</details>
+
+<details>
+<summary><strong>Licence</strong></summary>
 
 Osprey Launcher is licensed under the [GNU General Public License v3.0](LICENSE).
 
 Interface icons are from [Lucide](https://lucide.dev) (ISC licence).
+
+</details>
