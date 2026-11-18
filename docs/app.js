@@ -51,7 +51,7 @@
 
   function tile(item, n, opts = {}) {
     const meta = opts.missing
-      ? `<div class="tile-meta missing">Not found<span class="locate">Locate</span></div>`
+      ? `<div class="tile-meta missing"><span class="nf">Not found</span><span class="locate">Locate</span></div>`
       : `<div class="tile-meta">${esc(opts.where ? `${opts.where} · ${item.kind}` : item.kind)}</div>`;
     const star = STAR.replace('class="star"', `class="star${item.star ? "" : " off"}"`);
     return `<div class="tile" data-n="${n}">
@@ -64,6 +64,31 @@
     const star = starred ? `<span class="tab${active === "Starred" ? " on" : ""}">${STAR}Starred</span>` : "";
     return star + names.map((t) => `<span class="tab${t === active ? " on" : ""}">${t}</span>`).join("");
   }
+
+  // ---------- fixed heights: each grid reserves room for its tallest state ----------
+  // The previews change their content as they play. Without this, a grid with more rows
+  // makes its window taller and pushes the rest of the page down.
+  const fitters = [];
+  function fixHeight(box, states) {
+    const fit = () => {
+      const current = box.innerHTML;
+      box.style.minHeight = "";
+      let max = 0;
+      for (const html of states) {
+        box.innerHTML = html;
+        max = Math.max(max, box.offsetHeight);
+      }
+      box.innerHTML = current;
+      box.style.minHeight = `${max}px`;
+    };
+    fitters.push(fit);
+    fit();
+  }
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => fitters.forEach((f) => f()), 150);
+  });
 
   // ---------- a tiny scheduler that pauses while the tab is hidden ----------
   const loops = [];
@@ -92,19 +117,22 @@
     const hint = `Press 1–9 to open, ${mac ? "⌘K" : "Ctrl+K"} to search`;
     status.textContent = hint;
 
+    const listFor = (tab) => tab === "Starred"
+      ? names.flatMap((t) => ITEMS[t].filter((i) => i.star).map((i) => ({ ...i, where: t })))
+      : ITEMS[tab];
+    const gridHtml = (list) => list.slice(0, 10).map((it, i) => tile(it, i + 1, { where: it.where })).join("");
+
     function show(tab) {
-      const starred = tab === "Starred";
-      const list = starred
-        ? names.flatMap((t) => ITEMS[t].filter((i) => i.star).map((i) => ({ ...i, where: t })))
-        : ITEMS[tab];
+      const list = listFor(tab);
       tabs.innerHTML = tabsHtml(names, tab, true);
       el("hero-title").textContent = tab;
       el("hero-count").textContent = `${list.length} items`;
-      grid.innerHTML = list.slice(0, 10).map((it, i) => tile(it, i + 1, { where: it.where })).join("");
+      grid.innerHTML = gridHtml(list);
       return list;
     }
 
     let list = show("Work");
+    fixHeight(grid, [...names, "Starred"].map((t) => gridHtml(listFor(t))));
     if (reduced) return;
     const press = (n) => () => {
       const t = grid.querySelector(`.tile[data-n="${n}"]`);
@@ -133,17 +161,22 @@
     const grid = el("search-grid");
     const count = el("search-count");
 
+    const QUERIES = ["port", "plan", "notes"];
+    const hitsFor = (q) => (q ? all.filter((i) => i.name.toLowerCase().includes(q.toLowerCase())) : []);
+    const gridHtml = (hits) => hits.slice(0, 5).map((it, i) => tile(it, i + 1, { where: it.where })).join("");
+
     function render(q) {
       text.textContent = q;
-      const hits = q ? all.filter((i) => i.name.toLowerCase().includes(q.toLowerCase())) : [];
+      const hits = hitsFor(q);
       count.textContent = q ? `${hits.length} item${hits.length === 1 ? "" : "s"}` : "";
-      grid.innerHTML = hits.slice(0, 5).map((it, i) => tile(it, i + 1, { where: it.where })).join("");
+      grid.innerHTML = gridHtml(hits);
     }
 
     render("port");
+    fixHeight(grid, QUERIES.flatMap((q) => [...q].map((_c, i) => gridHtml(hitsFor(q.slice(0, i + 1))))));
     if (reduced) return;
     const steps = [];
-    for (const q of ["port", "plan", "notes"]) {
+    for (const q of QUERIES) {
       for (let i = 1; i <= q.length; i++) steps.push([() => render(q.slice(0, i)), 1]);
       steps.push([() => {}, 7]);
       steps.push([() => render(""), 2]);
@@ -158,9 +191,11 @@
     const chip = el("drag-chip");
     const base = ITEMS.Studio.slice(0, 3);
     const added = { name: "Quarterly plan.pdf", kind: "File" };
-    const render = (items) => { grid.innerHTML = items.map((it, i) => tile(it, i + 1)).join(""); };
+    const gridHtml = (items) => items.map((it, i) => tile(it, i + 1)).join("");
+    const render = (items) => { grid.innerHTML = gridHtml(items); };
 
     render(reduced ? [...base, added] : base);
+    fixHeight(grid, [gridHtml(base), gridHtml([...base, added])]);
     if (reduced) return;
     loop([
       [() => { render(base); chip.classList.remove("inside"); chip.classList.add("show"); }, 2],
@@ -192,15 +227,17 @@
     let missing = false;
     let starred = false;
 
+    const gridHtml = (s, m) => items.map((it, i) => tile({ ...it, star: s && i === 0 }, i + 1, { missing: m && i === 1 })).join("");
+
     function render() {
       tabs.innerHTML = tabsHtml(["Work", "Studio", "Home"], "Studio", starred);
-      items[0].star = starred;
-      grid.innerHTML = items.map((it, i) => tile(it, i + 1, { missing: missing && i === 1 })).join("");
+      grid.innerHTML = gridHtml(starred, missing);
     }
 
     starred = true;
     missing = true;
     render();
+    fixHeight(grid, [gridHtml(false, false), gridHtml(true, true)]);
     if (reduced) return;
     const set = (s, m) => () => { starred = s; missing = m; render(); };
     loop([

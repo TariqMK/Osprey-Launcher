@@ -124,7 +124,7 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
 .section-title > span:first-child { font-size: 15px; font-weight: 500; }
 .count { font-family: var(--mono); font-size: 12px; color: var(--t3); }
 .win-foot {
-  display: flex; justify-content: space-between; gap: 16px;
+  display: flex; justify-content: space-between; gap: 16px; white-space: nowrap;
   padding: 12px 16px; border-top: 1px solid var(--hl); color: var(--t3); font-size: 12px;
 }
 
@@ -142,10 +142,12 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
 .tile { text-align: center; }
 .tile-top { display: flex; justify-content: center; align-items: flex-start; height: 40px; margin-bottom: 10px; }
 .tile-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile-meta { color: var(--t3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Fixed height, so the Not found line with its Locate button is no taller than a type line. */
+.tile-meta { color: var(--t3); font-size: 12px; line-height: 18px; height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile-meta.missing { color: var(--danger); display: flex; justify-content: center; align-items: center; gap: 6px; }
+.tile-meta .nf { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .locate {
-  font-size: 11px; color: var(--t1); padding: 1px 8px; border-radius: 6px;
+  flex: none; font-size: 11px; line-height: 14px; color: var(--t1); padding: 1px 8px; border-radius: 6px;
   background: var(--raised); border: 1px solid var(--hl); transition: border-color .2s;
 }
 .locate.hit { border-color: var(--acc); }
@@ -282,7 +284,6 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
   .wrap { padding-left: 16px; padding-right: 16px; }
   .nav-links { display: none; }
   #hero-window .wordmark, #hero-window .win-version { display: none; }
-  .tile-meta.missing { flex-wrap: wrap; }
   .nav-row .btn-small { margin-left: auto; }
   .hero { padding-top: 64px; }
   .lede { font-size: 16px; }
@@ -292,6 +293,7 @@ h1 { font-size: clamp(34px, 6.4vw, 72px); line-height: 1.04; letter-spacing: -0.
   .grid .tile:nth-child(n + 5) { display: none; }
   #star-grid .tile:nth-child(n + 5), #drop-grid .tile:nth-child(n + 5) { display: none; }
   .win-foot span:last-child { display: none; }
+  .tile-meta .locate { display: none; } /* Too narrow for both; Not found matters more. */
   .tab { padding: 5px 9px; }
   .panel { padding: 20px; }
   .feature-grid { grid-template-columns: minmax(0, 1fr); }
