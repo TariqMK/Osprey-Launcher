@@ -46,6 +46,7 @@ QToolTip {{ background: {p["card"]}; color: {p["t1"]}; border: 1px solid {p["hl"
 
 QWidget#header {{ background: {p["deep"]}; border-bottom: 1px solid {p["hl"]}; }}
 QLabel#wordmark {{ font-size: 15px; font-weight: 600; }}
+QLabel#version {{ color: {p["t3"]}; font-size: 12px; }}
 
 QPushButton#tab {{
   background: transparent; color: {p["t2"]}; border: none; border-radius: 8px;

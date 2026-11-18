@@ -1,0 +1,30 @@
+{
+  "name": "Osprey Launcher",
+  "tagline": "Apps, files and links. One Launcher.",
+  "subtitle": "November 2026",
+  "icon": "icon/osprey-launcher.svg",
+  "fonts": {
+    "ui": ["Segoe UI", "Inter", "SF Pro Display", "Helvetica Neue", "Arial"],
+    "mono": ["Cascadia Mono", "Consolas", "SF Mono", "Menlo", "DejaVu Sans Mono"]
+  },
+  "accent": "#5cbfb3",
+  "semantic": {"error": "#e5484d"},
+  "themes": {
+    "dark": {
+      "bg": "#141415",
+      "surface": "#19191b",
+      "border": "#252526",
+      "text": "#ededed",
+      "text_secondary": "#a1a1a6",
+      "text_muted": "#85858b"
+    },
+    "light": {
+      "bg": "#fafafa",
+      "surface": "#ffffff",
+      "border": "#e8e8e8",
+      "text": "#171717",
+      "text_secondary": "#525252",
+      "text_muted": "#737373"
+    }
+  }
+}

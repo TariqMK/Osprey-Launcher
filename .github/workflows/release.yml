@@ -1,0 +1,240 @@
+# Builds Osprey Launcher for Windows, macOS (Apple silicon) and Linux, and publishes a GitHub release.
+# Run it by hand from the Actions tab. main makes a normal release; any other branch makes a branch build.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release type (on a branch other than main, public means pre-release)
+        type: choice
+        required: true
+        default: draft
+        options:
+          - draft
+          - public
+      bump:
+        description: Version increment
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+# Queue runs so two releases can never pick the same version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install the app and test tools
+        run: python -m pip install ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest
+
+  version:
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # Draft releases are only visible with write access.
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+      prerelease: ${{ steps.next.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Work out next version
+        id: next
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ inputs.bump }}
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          script=.github/scripts/next_version.sh
+          existing=$(
+            git tag --list
+            gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name'
+          )
+          base=$(printf '%s\n' "$existing" | bash "$script" "$BUMP")
+          if [ "$BRANCH" = main ]; then
+            tag=$base
+            prerelease=false
+          else
+            label=$(bash "$script" label "$BRANCH")
+            tag=$(printf '%s\n' "$existing" | bash "$script" branch "$base" "$label")
+            prerelease=true
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "Building $tag from $BRANCH as a $RELEASE_TYPE release ($BUMP)" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x64
+            mode: --onefile
+            name: Osprey Launcher
+            icon: assets/icon/osprey-launcher.ico
+          - os: macos-latest
+            target: macos-arm64
+            mode: --onedir # A macOS .app bundle is built from a folder build.
+            name: Osprey Launcher
+            icon: assets/icon/osprey-launcher.icns
+          - os: ubuntu-24.04
+            target: linux-x64
+            mode: --onefile
+            name: osprey-launcher
+            icon: assets/icon/osprey-launcher.png
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+      TARGET: ${{ matrix.target }}
+      APP: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Qt system libraries (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libxkbcommon-x11-0 libfontconfig1 libdbus-1-3
+
+      - name: Confirm Apple silicon (macOS)
+        if: runner.os == 'macOS'
+        run: test "$(uname -m)" = arm64
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install . pyinstaller
+          # Build from the source folder, so the version written below is the one bundled.
+          python -m pip uninstall -y osprey-launcher
+
+      - name: Check Qt and YAML are available
+        run: python -c "from PySide6 import QtWidgets, QtSvg, QtNetwork; import yaml; print('Qt and YAML ok')"
+
+      - name: Add version to the app
+        shell: bash
+        run: |
+          printf '"""Holds the app version. Set from the release tag by the release workflow."""\n\n__version__ = "%s"\n' \
+            "${TAG#v}" > osprey_launcher/_version.py
+          cat osprey_launcher/_version.py
+
+      - name: Build
+        shell: bash
+        run: >
+          pyinstaller --noconfirm ${{ matrix.mode }} --windowed
+          --name "$APP"
+          --paths .
+          --specpath build
+          --icon "$PWD/${{ matrix.icon }}"
+          --osx-bundle-identifier io.github.tariqmk.ospreylauncher
+          osprey_launcher/__main__.py
+
+      - name: Check the bundle has everything (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist/$env:APP.exe" -ArgumentList "--self-check" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Error "Self-check failed with exit code $($p.ExitCode)"; exit 1 }
+          Get-ChildItem dist
+
+      - name: Check the bundle has everything (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          "dist/$APP.app/Contents/MacOS/$APP" --self-check
+          ls "dist/$APP.app/Contents/Resources/"*.icns
+
+      - name: Check the bundle has everything (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          "dist/$APP" --self-check
+          ls -la dist
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir out
+          file="Osprey-Launcher-$TAG-$TARGET"
+          case "$RUNNER_OS" in
+            Windows) cp "dist/$APP.exe" "out/$file.exe" ;;
+            macOS) ditto -c -k --keepParent "dist/$APP.app" "out/$file.zip" ;;
+            Linux) tar -czf "out/$file.tar.gz" -C dist "$APP" ;;
+          esac
+          ls -la out
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.target }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.version.outputs.tag }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+      RELEASE_TYPE: ${{ inputs.release_type }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Check all three downloads are present
+        run: |
+          ls -la release
+          test "$(ls release | wc -l)" -eq 3
+
+      - name: Create tag on the commit that was built
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"
+
+      - name: Create release
+        run: |
+          flags=()
+          if [ "$RELEASE_TYPE" = draft ]; then
+            flags+=(--draft)
+          fi
+          if [ "$PRERELEASE" = true ]; then
+            # Branch builds are never offered as the latest release.
+            flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$TAG" release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "Osprey Launcher $TAG" \
+            --generate-notes \
+            "${flags[@]}"

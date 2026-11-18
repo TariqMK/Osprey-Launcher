@@ -8,6 +8,10 @@ Writes:
   osprey_launcher/app_icon.py       the master SVG as a string, used for the window icon
   assets/banner.png                 README banner, 1280 x 320 drawn at 2x (2560 x 640)
   assets/social-card.png            GitHub social preview, 1280 x 640 (fixed repo-card layout)
+  assets/brand-board.png            brand board, 3200 x 2500 (palette and fonts from assets/brand.json)
+  docs/icon.svg, docs/apple-touch-icon.png, docs/social-card.png   copies for the GitHub Pages site
+
+The name and tagline come from assets/brand.json. Update that file when the theme or tagline changes.
 
 Run from the project root with the project's environment:
   .venv/bin/python assets/make_assets.py
@@ -15,6 +19,8 @@ Run from the project root with the project's environment:
 
 from __future__ import annotations
 
+import json
+import re
 import struct
 import sys
 from pathlib import Path
@@ -48,8 +54,9 @@ TEXT_2 = "#a1a1a6"  # theme "t2"
 TEXT_3 = "#85858b"  # theme "t3"
 BORDER = QColor(237, 237, 237, 20)  # theme "hl"
 
-APP_NAME = "Osprey Launcher"
-TAGLINE = "Apps, files and links. One Launcher."
+BRAND = json.loads((ROOT / "assets" / "brand.json").read_text(encoding="utf-8"))
+APP_NAME = BRAND["name"]
+TAGLINE = BRAND["tagline"]
 SUBLINE = "Windows · macOS · Linux"
 SANS = ["Segoe UI", "Inter", "SF Pro Display", "Helvetica Neue", "Arial"]
 MONO = ["Cascadia Mono", "Consolas", "SF Mono", "Menlo", "DejaVu Sans Mono"]
@@ -254,9 +261,31 @@ def main() -> int:
     write_icns(svg, ICON_DIR / f"{NAME}.icns")
     write_app_icon_module(svg)
     banner(svg).save(str(ROOT / "assets" / "banner.png"))
-    social_card(svg).save(str(ROOT / "assets" / "social-card.png"))
+    card = social_card(svg)
+    card.save(str(ROOT / "assets" / "social-card.png"))
+
+    # The Pages site serves only docs/, so it gets its own copies.
+    docs = ROOT / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "icon.svg").write_text(svg, encoding="utf-8")
+    card.save(str(docs / "social-card.png"))
+    # iOS rounds the corners itself and needs no transparency: crop to the tile, square corners.
+    touch = svg.replace('viewBox="0 0 1024 1024"', 'viewBox="100 100 824 824"')
+    touch = re.sub(r'<rect x="102"[^>]*/>', "", touch).replace('rx="185"', 'rx="0"')
+    render(touch, 180).save(str(docs / "apple-touch-icon.png"))
+    sys.path.insert(0, str(ROOT / "assets"))
+    import make_brand_board
+
+    sys.argv = [
+        sys.argv[0],
+        str(ROOT / "assets" / "brand.json"),
+        "--out",
+        str(ROOT / "assets" / "brand-board.png"),
+    ]
+    if make_brand_board.main() != 0:
+        return 1
     print(
-        "Wrote assets/icon/*, osprey_launcher/app_icon.py, assets/banner.png, assets/social-card.png"
+        "Wrote icon files, osprey_launcher/app_icon.py, banner, social card and brand board"
     )
     return 0
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -38,7 +39,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import launcher
+from . import __version__, launcher
 from .backup import BackupError
 from .backup import parse as parse_backup
 from .icons import ICON_SIZE, IconCache, app_icon, line_icon
@@ -343,6 +344,9 @@ class MainWindow(QMainWindow):
 
         wordmark = QLabel("Osprey", objectName="wordmark")
         row.addWidget(wordmark)
+        version = QLabel(f"v{__version__}", objectName="version")
+        version.setToolTip(f"{APP_NAME} version {__version__}")
+        row.addWidget(version, 0, Qt.AlignBaseline)
         row.addSpacing(8)
 
         self.tab_row = QHBoxLayout()
@@ -1077,7 +1081,43 @@ def choose_data_dir(default: Path) -> Path | None:
     return None
 
 
+def self_check() -> int:
+    """Check a packaged build has everything it needs. Opens no window and writes no data.
+
+    The release workflow runs the built app with --self-check and stops if this fails.
+    """
+    from PySide6.QtGui import QImageReader
+    from PySide6.QtNetwork import QNetworkAccessManager
+
+    from .backup import dump
+    from .models import Item, Tab
+
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    app = QApplication([sys.argv[0]])
+    formats = {bytes(f).decode() for f in QImageReader.supportedImageFormats()}
+    sample = [
+        Tab("t", "Tab", [Item("i", "link", "example.com", "https://example.com")])
+    ]
+    checks = {
+        "app icon (SVG renderer)": not app_icon().isNull(),
+        "line icons": not line_icon("star", "#000000").isNull(),
+        "site icon formats (png, ico)": {"png", "ico"} <= formats,
+        "YAML backup": parse_backup(dump(sample, ["i"], Path.cwd()), Path.cwd())[1]
+        != [],
+        "network": QNetworkAccessManager(app) is not None,
+        "style sheet": bool(stylesheet(PALETTES["dark"], "monospace")),
+    }
+    ok = all(checks.values())
+    if sys.stdout:  # Windowed Windows builds have no console.
+        print(f"{APP_NAME} v{__version__}")
+        for name, passed in checks.items():
+            print(f"{'ok  ' if passed else 'FAIL'} {name}")
+    return 0 if ok else 1
+
+
 def main() -> int:
+    if "--self-check" in sys.argv:
+        return self_check()
     QApplication.setApplicationName(APP_NAME)
     QApplication.setApplicationDisplayName(APP_NAME)
     app = QApplication(sys.argv)

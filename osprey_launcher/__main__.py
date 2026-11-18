@@ -1,5 +1,5 @@
-"""Starts Osprey Launcher with `python -m osprey_launcher`."""
+"""Starts Osprey Launcher. Used by `python -m osprey_launcher` and as the PyInstaller entry point."""
 
-from .app import main
+from osprey_launcher.app import main
 
 raise SystemExit(main())

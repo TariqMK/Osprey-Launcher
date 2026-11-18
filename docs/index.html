@@ -1,0 +1,204 @@
+<!doctype html>
+<!-- Osprey Launcher product page: one static page served by GitHub Pages from docs/. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Osprey Launcher · Apps, files and links. One Launcher.</title>
+  <meta name="description" content="Keep your apps, files, folders and web links in one tabbed window. Open any item with one key. Free, open source, works offline, no tracking.">
+  <meta name="theme-color" content="#0f0f10">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Osprey Launcher">
+  <meta property="og:description" content="Apps, files and links. One Launcher. Open any item with one key.">
+  <meta property="og:url" content="https://tariqmk.github.io/Osprey-Launcher/">
+  <meta property="og:image" content="https://tariqmk.github.io/Osprey-Launcher/social-card.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Osprey Launcher">
+  <meta name="twitter:description" content="Apps, files and links. One Launcher. Open any item with one key.">
+  <meta name="twitter:image" content="https://tariqmk.github.io/Osprey-Launcher/social-card.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-row">
+      <a class="brand" href="#top"><img src="icon.svg" alt="" width="28" height="28"><span>Osprey Launcher</span></a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/TariqMK/Osprey-Launcher">GitHub</a>
+      </nav>
+      <a class="btn btn-small" href="#download">Download</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <svg class="motif" viewBox="0 0 1200 600" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+        <g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M300 300 L600 100 L900 300"/>
+          <path d="M300 400 L600 200 L900 400"/>
+          <path d="M300 500 L600 300 L900 500"/>
+          <path d="M120 420 L600 40 L1080 420"/>
+        </g>
+      </svg>
+      <div class="wrap hero-text">
+        <h1>Apps, files and links.<br>One Launcher.</h1>
+        <p class="lede">Osprey Launcher keeps your apps, shortcuts, files, folders and web links in one window. Group them in tabs. Open any item with one click or one key.</p>
+        <div class="actions">
+          <a class="btn" id="hero-download" href="https://github.com/TariqMK/Osprey-Launcher/releases/latest">Download</a>
+          <a class="btn btn-ghost" href="https://github.com/TariqMK/Osprey-Launcher">View source</a>
+        </div>
+        <p class="meta" id="hero-meta">Free · GPL-3.0 · Works offline · No tracking</p>
+      </div>
+
+      <div class="wrap">
+        <div class="window" id="hero-window" aria-label="Live preview of the Osprey Launcher window">
+          <div class="win-head">
+            <span class="wordmark">Osprey</span>
+            <div class="tabs" id="hero-tabs"></div>
+            <span class="win-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search</span>
+            <span class="win-add">+ Add</span>
+          </div>
+          <div class="win-body">
+            <div class="section-title"><span id="hero-title">Work</span><span class="count" id="hero-count"></span></div>
+            <div class="grid" id="hero-grid"></div>
+          </div>
+          <div class="win-foot">
+            <span id="hero-status">Press 1–9 to open, Ctrl+K to search</span>
+            <span class="mono">Stored next to the app</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap principles" aria-label="Principles">
+      <div>
+        <h2>Stays on your computer.</h2>
+        <p>Works offline. No accounts, no telemetry, no tracking. The one connection: when you add a link, the app asks that site once for its icon.</p>
+      </div>
+      <div>
+        <h2>One key away.</h2>
+        <p>Every tile carries a number. Press 1 to 9 to open the first nine items in the tab. Ctrl+K, or ⌘K on a Mac, searches every tab.</p>
+      </div>
+      <div>
+        <h2>Moves with you.</h2>
+        <p>All data lives in one folder next to the app. Copy both to a USB drive and your tabs come too. A readable backup is saved after every change.</p>
+      </div>
+    </section>
+
+    <section class="wrap features" id="features">
+      <h2 class="section-head">Everything you open,<br>arranged your way.</h2>
+
+      <div class="panel panel-wide">
+        <div class="panel-copy">
+          <h3>Search across every tab</h3>
+          <p>Type part of a name, file name or web address. Results come from all tabs, each labelled with its own tab. Enter opens the first one.</p>
+        </div>
+        <div class="mini window" aria-hidden="true">
+          <div class="win-head">
+            <span class="wordmark">Osprey</span>
+            <span class="win-search wide"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span id="search-text"></span><span class="caret"></span></span>
+          </div>
+          <div class="win-body">
+            <div class="section-title"><span>Results</span><span class="count" id="search-count"></span></div>
+            <div class="grid grid-3" id="search-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel">
+          <div class="panel-copy">
+            <h3>Drop it in</h3>
+            <p>Drag files, folders, apps or links from your file manager or browser into the window. They join the open tab.</p>
+          </div>
+          <div class="mini window drop-demo" aria-hidden="true">
+            <div class="win-body">
+              <div class="grid grid-3" id="drop-grid"></div>
+              <div class="drop-overlay" id="drop-overlay">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                <strong>Drop to add to Studio</strong>
+                <span>Files, folders, shortcuts and links</span>
+              </div>
+              <div class="drag-chip" id="drag-chip">
+                <span class="ic ic-doc"></span>Quarterly plan.pdf
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-copy">
+            <h3>Stars, and nothing lost</h3>
+            <p>Star items to keep them together in a Starred tab. If a file moves, its tile says Not found until you locate it.</p>
+          </div>
+          <div class="mini window" aria-hidden="true">
+            <div class="win-head">
+              <div class="tabs" id="star-tabs"></div>
+            </div>
+            <div class="win-body">
+              <div class="grid grid-3" id="star-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ul class="feature-grid">
+        <li><strong>Tabs</strong><span>Group items, for example Work, Studio and Home.</span></li>
+        <li><strong>Drag and drop</strong><span>Add items from your file manager or browser, or with the Add button.</span></li>
+        <li><strong>Arrange</strong><span>Drag tiles to reorder them, or onto another tab to move them.</span></li>
+        <li><strong>Real icons</strong><span>System icons for apps, files and folders. Site icons for links.</span></li>
+        <li><strong>Keys 1 to 9</strong><span>Open the first nine items in the tab without the mouse.</span></li>
+        <li><strong>Search</strong><span>Find any item in any tab by name, file name or address.</span></li>
+        <li><strong>Starred</strong><span>Keep favourites together. Each stays in its own tab too.</span></li>
+        <li><strong>Your own names</strong><span>Rename a tile. The file keeps its name, and you can reset.</span></li>
+        <li><strong>Compact tiles</strong><span>Show or hide the name and type under each icon.</span></li>
+        <li><strong>Readable backup</strong><span>A YAML file of all tabs and items, saved after every change.</span></li>
+        <li><strong>Light and dark</strong><span>Pick a theme, or follow the system theme.</span></li>
+        <li><strong>Portable</strong><span>All data stays in one folder next to the app.</span></li>
+      </ul>
+    </section>
+
+    <section class="wrap download" id="download">
+      <h2 class="section-head">Download <span class="mono muted" id="dl-version"></span></h2>
+      <div class="cards">
+        <a class="card" data-os="windows" href="https://github.com/TariqMK/Osprey-Launcher/releases/latest">
+          <strong>Windows</strong>
+          <span class="mono muted">x64 · .exe <span class="size"></span></span>
+          <p>Your tabs and items are saved in a folder next to the app. Move both together.</p>
+        </a>
+        <a class="card" data-os="macos" href="https://github.com/TariqMK/Osprey-Launcher/releases/latest">
+          <strong>macOS</strong>
+          <span class="mono muted">Apple silicon · .zip <span class="size"></span></span>
+          <p>The app is unsigned. The first time, open System Settings › Privacy &amp; Security and select Open Anyway.</p>
+        </a>
+        <a class="card" data-os="linux" href="https://github.com/TariqMK/Osprey-Launcher/releases/latest">
+          <strong>Linux</strong>
+          <span class="mono muted">x64 · .tar.gz <span class="size"></span></span>
+          <p>Opens .desktop shortcuts with gio launch. Install GLib if gio is missing.</p>
+        </a>
+      </div>
+      <p class="fine" id="dl-note">No release is published yet. Until then, <a href="https://github.com/TariqMK/Osprey-Launcher#run-from-source">run it from source</a> with Python 3.9 or later.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <span class="brand"><img src="icon.svg" alt="" width="22" height="22"><span>Osprey Launcher</span></span>
+      <span class="muted">Removing a tile never changes your files, folders or apps.</span>
+      <nav class="foot-links" aria-label="Project links">
+        <a href="https://github.com/TariqMK/Osprey-Launcher">GitHub</a>
+        <a href="https://github.com/TariqMK/Osprey-Launcher/releases">Releases</a>
+        <a href="https://github.com/TariqMK/Osprey-Launcher/issues">Issues</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
