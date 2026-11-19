@@ -18,6 +18,9 @@ from osprey_launcher.theme import PALETTES, stylesheet
 @pytest.fixture(scope="module")
 def app():
     application = QApplication.instance() or QApplication([])
+    application.setStyle(
+        "Fusion"
+    )  # The app's own style, so sizes match on every system.
     application.setStyleSheet(stylesheet(PALETTES["dark"], "monospace"))
     return application
 
@@ -211,10 +214,12 @@ def test_row_puts_key_then_icon_then_name(app):
 
 @pytest.mark.parametrize("size", [1, 2])
 def test_long_names_fit_inside_a_row(app, size):
-    for missing in (False, True):
-        tile = make_row(
-            app, "Quarterly planning workshop notes final v3.docx", size, missing
-        )
+    names = ["Quarterly planning workshop notes final v3.docx", "W" * 60, "Il1" * 60]
+    names += [
+        "Budget " + "x" * n for n in range(10, 40)
+    ]  # Every possible cut-off width.
+    for missing, long_name in [(m, n) for m in (False, True) for n in names]:
+        tile = make_row(app, long_name, size, missing)
         for name in ("tileName", "tileMeta"):
             text = label(tile, name)
             width = QFontMetrics(text.font()).horizontalAdvance(text.text())

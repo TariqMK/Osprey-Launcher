@@ -272,8 +272,10 @@ class Tile(QFrame):
             mark.setPixmap(star)
             mark.setToolTip("Starred")
 
+        # Measure inside the tile's border, which the style sheet draws and Qt subtracts.
+        self.ensurePolished()
         margins = layout.contentsMargins()
-        text_width = size.width() - margins.left() - margins.right()
+        text_width = self.contentsRect().width() - margins.left() - margins.right()
         text_width -= cap.width() + icon.width() + 2 * layout.spacing()
         if mark is not None:
             text_width -= star.deviceIndependentSize().width() + layout.spacing()
