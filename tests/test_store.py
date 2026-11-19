@@ -1,5 +1,6 @@
 """Tests for the launcher data store: adding, detecting, saving and finding items."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -265,3 +266,28 @@ def test_custom_name_keeps_original_and_can_be_reset(base):
     assert item.custom_name is None and item.label == "Reports"
     store.rename_item(item.id, "Reports")  # Same as the original: no custom name.
     assert item.custom_name is None
+
+
+def test_tile_size_defaults_to_tiles_and_is_saved(base):
+    store = make_store(base)
+    assert store.tile_size == 3
+    store.set_display(size=1)
+    assert make_store(base).tile_size == 1
+
+
+def test_tile_size_stays_in_range(base):
+    store = make_store(base)
+    store.set_display(size=9)
+    assert store.tile_size == 5
+    store.set_display(size=0)
+    assert store.tile_size == 1
+
+
+def test_bad_tile_size_in_file_falls_back(base):
+    store = make_store(base)
+    store.save()
+    for bad in (7, "big", True, None):
+        raw = json.loads(store.path.read_text(encoding="utf-8"))
+        raw["display"]["size"] = bad
+        store.path.write_text(json.dumps(raw), encoding="utf-8")
+        assert make_store(base).tile_size == 3, bad

@@ -48,6 +48,15 @@ Star an item and it also shows in the **Starred** tab. It stays in its own tab t
 
 Give any tile your own name. Hide the names or types under the icons to fit more tiles in the window.
 
+### Rows or tiles, at the size you like
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/rows-dark.png">
+  <img src="assets/screenshots/rows-light.png" alt="The Work tab as small rows: each row shows its number key, icon, name and folder, with the Size slider open at Small rows" width="840">
+</picture>
+
+One **Size** slider changes the whole layout. The two small steps show rows with each item's number, name and folder. The three large steps show tiles with bigger icons.
+
 ### Your data stays with the app
 
 <picture>
@@ -190,7 +199,7 @@ Right-click a tile to see these commands:
 
 ### Fix a moved or deleted item
 
-If a file or folder is moved or deleted, its tile shows **Not found**. When the type line is hidden, the name shows in red. When only icons are shown, a red dot shows in the corner of the tile.
+If a file or folder is moved or deleted, its tile shows **Not found**. When the detail line is hidden, the name shows in red. When only icons are shown, a red dot shows in the corner of the tile.
 
 1. Select the tile, or select **Locate** on the tile.
 2. Choose the item's new location.
@@ -210,14 +219,33 @@ If a file or folder is moved or deleted, its tile shows **Not found**. When the 
 3. Press **Enter** to open the first result, or press **1** to **9** after you leave the search field.
 4. Press **Esc** to clear the search.
 
+### Change the layout and size
+
+The **Size** slider has 5 steps:
+
+| Step | Layout |
+| --- | --- |
+| **Small rows** | Rows with a 20 px icon. The number key comes first, then the icon, the name and the folder. |
+| **Rows** | Rows with a 32 px icon. |
+| **Tiles** | Tiles with a 40 px icon. This is the default. |
+| **Large tiles** | Tiles with a 56 px icon. |
+| **Extra large tiles** | Tiles with a 72 px icon. |
+
+1. Select the layout button at the bottom right of the window.
+2. Drag the **Size** slider.
+
+You can also press **⌘+** and **⌘−** on macOS, or **Ctrl++** and **Ctrl+−** on Windows and Linux.
+
+The setting applies to all tabs and is saved.
+
 ### Show or hide tile labels
 
-Each tile shows the item name and its type under the icon. To hide one or both:
+Each tile shows the item name and a detail line. On tiles, the detail line is the type. On rows, it is the folder that holds the item, or the web address. To hide a label:
 
-1. Select the grid button at the bottom right of the window.
-2. Select **Show names** or **Show types** to turn it on or off.
+1. Select the layout button at the bottom right of the window.
+2. Select **Show names** or **Show details** to turn it on or off.
 
-Tiles get smaller when a label is hidden. With both labels off, only icons show. The setting applies to all tabs and is saved.
+Tiles get smaller when a label is hidden. With both labels off, only icons show. Rows always show the name, so **Show names** is not available for rows. The setting applies to all tabs and is saved.
 
 **Note:** To see an item's full name and location, hold the pointer over its tile.
 

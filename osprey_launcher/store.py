@@ -22,6 +22,8 @@ from .models import (
 DATA_FILE = "launcher.json"
 SCHEMA_VERSION = 1
 THEMES = ("system", "light", "dark")
+TILE_SIZES = (1, 2, 3, 4, 5)
+DEFAULT_TILE_SIZE = 3
 
 
 class Store:
@@ -34,6 +36,9 @@ class Store:
         self.theme = "system"
         self.show_names = True
         self.show_types = True
+        self.tile_size = (
+            DEFAULT_TILE_SIZE  # 1-2 are rows, 3-5 are tiles with bigger icons.
+        )
         self.starred: list[str] = []  # Item IDs, in the order shown in the Starred tab.
         self.restored_from_backup = (
             False  # True when the data file was unreadable at start.
@@ -61,6 +66,9 @@ class Store:
         display = raw.get("display") if isinstance(raw.get("display"), dict) else {}
         self.show_names = display.get("names", True) is not False
         self.show_types = display.get("types", True) is not False
+        size = display.get("size")
+        valid = isinstance(size, int) and not isinstance(size, bool)
+        self.tile_size = size if valid and size in TILE_SIZES else DEFAULT_TILE_SIZE
         self.tabs = []
         for t in raw.get("tabs", []):
             items = [
@@ -84,7 +92,11 @@ class Store:
         data = {
             "schema": SCHEMA_VERSION,
             "theme": self.theme,
-            "display": {"names": self.show_names, "types": self.show_types},
+            "display": {
+                "names": self.show_names,
+                "types": self.show_types,
+                "size": self.tile_size,
+            },
             "starred": self.starred,
             "tabs": [asdict(t) for t in self.tabs],
         }
@@ -269,8 +281,15 @@ class Store:
             self.theme = theme
             self.save()
 
-    def set_display(self, names: bool | None = None, types: bool | None = None) -> None:
-        """Choose whether tiles show the item name and the type line under the icon."""
+    def set_display(
+        self,
+        names: bool | None = None,
+        types: bool | None = None,
+        size: int | None = None,
+    ) -> None:
+        """Choose the tile size and whether tiles show the item name and the type line."""
+        if size is not None:
+            self.tile_size = min(max(size, TILE_SIZES[0]), TILE_SIZES[-1])
         if names is not None:
             self.show_names = names
         if types is not None:

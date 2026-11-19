@@ -93,6 +93,7 @@ QFrame#tile:hover {{ background: {p["raised"]}; }}
 QFrame#tile QLabel {{ background: transparent; border: none; }}
 QLabel#tileName {{ font-size: 13px; font-weight: 500; }}
 QLabel#tileMeta {{ color: {p["t3"]}; font-size: 12px; }}
+QLabel#tileMeta[mono="true"] {{ font-family: "{mono}"; font-size: 11px; }}
 QLabel#tileMeta[missing="true"] {{ color: {p["danger"]}; }}
 QLabel#tileName[missing="true"] {{ color: {p["danger"]}; }}
 QFrame#tile QLabel#missingDot {{ background: {p["danger"]}; border-radius: 4px; }}
@@ -135,5 +136,14 @@ QMenu {{
 QMenu::item {{ padding: 6px 24px 6px 12px; border-radius: 6px; color: {p["t1"]}; }}
 QMenu::item:selected {{ background: {p["raised"]}; }}
 QMenu::item:disabled {{ color: {p["t3"]}; }}
+QWidget#sizePanel {{ background: transparent; }}
+QLabel#menuLabel {{ font-weight: 500; }}
+QLabel#menuValue, QLabel#menuHint {{ color: {p["t3"]}; font-size: 12px; }}
+QSlider#sizeSlider {{ min-height: 20px; }}
+QSlider#sizeSlider::groove:horizontal {{ height: 4px; background: {p["hl"]}; border-radius: 2px; }}
+QSlider#sizeSlider::sub-page:horizontal {{ background: {p["acc"]}; border-radius: 2px; }}
+QSlider#sizeSlider::handle:horizontal {{
+  background: {p["t1"]}; width: 14px; height: 14px; margin: -5px 0; border-radius: 7px;
+}}
 QMenu::separator {{ height: 1px; background: {p["hl"]}; margin: 4px 8px; }}
 """

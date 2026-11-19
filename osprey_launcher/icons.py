@@ -38,6 +38,8 @@ _LUCIDE = {
     '<rect width="7" height="7" x="14" y="14" rx="1"/>'
     '<rect width="7" height="7" x="3" y="14" rx="1"/>',
     "monitor": '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+    "list": '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/>'
+    '<path d="M8 18h13"/><path d="M8 6h13"/>',
     "download": '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>'
     '<path d="M12 15V3"/>',
 }
@@ -90,7 +92,8 @@ def _rounded(image: QImage, size: int, scale: float) -> QPixmap:
     painter.setRenderHint(QPainter.Antialiasing)
     painter.setRenderHint(QPainter.SmoothPixmapTransform)
     clip = QPainterPath()
-    clip.addRoundedRect(QRectF(0, 0, px, px), 10 * scale, 10 * scale)
+    radius = size / 4 * scale
+    clip.addRoundedRect(QRectF(0, 0, px, px), radius, radius)
     painter.setClipPath(clip)
     painter.fillRect(pix.rect(), QColor("#ffffff"))
     inner = int(px * 0.7)
@@ -101,17 +104,20 @@ def _rounded(image: QImage, size: int, scale: float) -> QPixmap:
     return pix
 
 
-def letter_tile(text: str, bg: str, fg: str, scale: float) -> QPixmap:
-    px = int(ICON_SIZE * scale)
+def letter_tile(
+    text: str, bg: str, fg: str, scale: float, size: int = ICON_SIZE
+) -> QPixmap:
+    px = int(size * scale)
     pix = QPixmap(px, px)
     pix.fill(Qt.transparent)
     painter = QPainter(pix)
     painter.setRenderHint(QPainter.Antialiasing)
     path = QPainterPath()
-    path.addRoundedRect(QRectF(0, 0, px, px), 10 * scale, 10 * scale)
+    radius = size / 4 * scale
+    path.addRoundedRect(QRectF(0, 0, px, px), radius, radius)
     painter.fillPath(path, QColor(bg))
     font = QFont()
-    font.setPixelSize(int(17 * scale))
+    font.setPixelSize(max(8, int(size * 17 / ICON_SIZE * scale)))
     font.setWeight(QFont.Medium)
     painter.setFont(font)
     painter.setPen(QColor(fg))
@@ -136,16 +142,19 @@ class IconCache(QObject):
     def _site_icon_path(self, domain: str) -> Path:
         return self.folder / (hashlib.sha1(domain.encode()).hexdigest()[:16] + ".png")
 
-    def pixmap_for_path(self, path: str, scale: float) -> QPixmap:
+    def pixmap_for_path(
+        self, path: str, scale: float, size: int = ICON_SIZE
+    ) -> QPixmap:
         icon = self.provider.icon(QFileInfo(path))
-        pix = icon.pixmap(QSize(ICON_SIZE, ICON_SIZE), scale)
-        return pix
+        return icon.pixmap(QSize(size, size), scale)
 
-    def pixmap_for_link(self, domain: str, bg: str, fg: str, scale: float) -> QPixmap:
+    def pixmap_for_link(
+        self, domain: str, bg: str, fg: str, scale: float, size: int = ICON_SIZE
+    ) -> QPixmap:
         image = QImage(str(self._site_icon_path(domain)))
         if image.isNull():
-            return letter_tile(domain, bg, fg, scale)
-        return _rounded(image, ICON_SIZE, scale)
+            return letter_tile(domain, bg, fg, scale, size)
+        return _rounded(image, size, scale)
 
     def has_site_icon(self, domain: str) -> bool:
         return self._site_icon_path(domain).exists()

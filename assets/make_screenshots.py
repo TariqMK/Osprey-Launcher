@@ -1,7 +1,7 @@
 """Retakes the README screenshots and GIF from the real app, filled with made-up sample data.
 
 Writes assets/screenshots/<view>-light.png and <view>-dark.png at 2x (2000 x 1080 px) for the
-main, search, starred, data-menu and labels views, and assets/gifs/drag-to-reorder.gif (dark,
+main, search, starred, data-menu, labels, rows and large views, and assets/gifs/drag-to-reorder.gif (dark,
 1000 px wide). The GIF needs Pillow, which the "dev" extra installs.
 
 Run from the project root with the project's environment, on Windows, macOS or Linux:
@@ -103,6 +103,9 @@ def make_sample_files(home: Path) -> None:
 def build_store(work: Path) -> Store:
     home = work / "Alex"
     make_sample_files(home)
+    # Rows show each item's folder with the home folder as ~. Point home at the sample folder,
+    # so the pictures show ~/Documents and never the real home or temporary folder.
+    os.environ["HOME"] = os.environ["USERPROFILE"] = str(home)
     data = work / "OspreyLauncher-data"
     store = Store(data, work)
     first = store.tabs[0]
@@ -142,6 +145,18 @@ def item_id(store: Store, name: str) -> str:
 
 def paint_data_menu(window: MainWindow, app: QApplication):
     """Return a painter for capture() that draws the data menu open above its button."""
+    return paint_menu(window, app, window.data_menu, window.data_button, highlight=-1)
+
+
+def paint_view_menu(window: MainWindow, app: QApplication):
+    """Return a painter for capture() that draws the layout and size menu open above its button."""
+    return paint_menu(
+        window, app, window.view_menu, window.view_button, align_right=True
+    )
+
+
+def paint_menu(window, app, open_menu, button, highlight=None, align_right=False):
+    """Return a painter for capture() that draws a footer menu open above its button."""
 
     def extra(image: QPixmap) -> None:
         menus: list[QMenu] = []
@@ -150,18 +165,21 @@ def paint_data_menu(window: MainWindow, app: QApplication):
             menu
         )  # Keep it open, don't block.
         try:
-            window.data_menu()
+            open_menu()
         finally:
             window._menu_above = original
         menu = menus[0]
-        button = window.data_button
         root = window.centralWidget()
         top_left = button.mapTo(root, QPoint(0, 0))
         menu.popup(button.mapToGlobal(QPoint(0, 0)))
-        menu.setActiveAction(menu.actions()[-1])  # Highlight "Restore from backup…".
+        if highlight is not None:
+            menu.setActiveAction(menu.actions()[highlight])
         app.processEvents()
         shot = menu.grab()
-        at = top_left - QPoint(0, int(shot.deviceIndependentSize().height()) + 4)
+        size = shot.deviceIndependentSize()
+        at = top_left - QPoint(0, int(size.height()) + 4)
+        if align_right:
+            at.setX(top_left.x() + button.width() - int(size.width()))
         painter = QPainter(image)
         painter.drawPixmap(at, shot)
         painter.end()
@@ -306,6 +324,12 @@ def main() -> int:
 
         window.select_tab(store.tabs[0].id)
         capture(window, app, "data-menu", paint_data_menu(window, app))
+
+        window.set_display(size=1)
+        capture(window, app, "rows", paint_view_menu(window, app))
+        window.set_display(size=5)
+        capture(window, app, "large")
+        window.set_display(size=3)
 
         make_drag_gif(window, app)
 

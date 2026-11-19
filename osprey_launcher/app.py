@@ -35,9 +35,11 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QSlider,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
 from . import __version__, launcher
@@ -46,7 +48,7 @@ from .backup import parse as parse_backup
 from .icons import ICON_SIZE, IconCache, app_icon, line_icon
 from .models import Item, normalise_url, resolve_target, url_domain
 from .paths import app_location, default_data_dir, ensure_writable
-from .store import Store
+from .store import DEFAULT_TILE_SIZE, TILE_SIZES, Store
 from .theme import PALETTES, stylesheet
 
 APP_NAME = "Osprey Launcher"
@@ -59,13 +61,51 @@ STARRED = "starred"  # ID of the Starred tab. It is built from the starred list,
 AUTOSCROLL_EDGE, AUTOSCROLL_STEP = 32, 16
 
 
-def tile_size(show_name: bool, show_type: bool) -> QSize:
-    """Tiles shrink when the name or type line under the icon is hidden."""
+# Sizes 1 and 2 show each item as a row: key, icon, then name and location side by side.
+# Sizes 3 to 5 show tiles with the icon on top. Size 3 is the original tile.
+ROW_LAYOUT = {1: (20, 248), 2: (32, 288)}  # Icon size and row width, in px.
+TILE_ICONS = {3: ICON_SIZE, 4: 56, 5: 72}
+SIZE_NAMES = {
+    1: "Small rows",
+    2: "Rows",
+    3: "Tiles",
+    4: "Large tiles",
+    5: "Extra large tiles",
+}
+
+
+def is_rows(size: int) -> bool:
+    return size in ROW_LAYOUT
+
+
+def icon_size(size: int) -> int:
+    return ROW_LAYOUT[size][0] if is_rows(size) else TILE_ICONS[size]
+
+
+def tile_size(show_name: bool, show_type: bool, size: int = DEFAULT_TILE_SIZE) -> QSize:
+    """Tiles grow with the size setting and shrink when the name or type line is hidden.
+
+    Rows always show the name, so only the detail line changes their height.
+    """
+    if is_rows(size):
+        icon, width = ROW_LAYOUT[size]
+        return QSize(width, icon + (24 if show_type else 16))
+    extra = TILE_ICONS[size] - ICON_SIZE
+    width = 176 + extra * 3 // 2
     if show_name and show_type:
-        return QSize(176, 116)
+        return QSize(width, 116 + extra)
     if show_name or show_type:
-        return QSize(176, 96)
-    return QSize(96, 96)
+        return QSize(width, 96 + extra)
+    return QSize(96 + extra, 96 + extra)
+
+
+def short_location(path: str) -> str:
+    """The folder an item is in, with the home folder written as ~."""
+    parent = Path(path).parent
+    try:
+        return str(Path("~") / parent.relative_to(Path.home()))
+    except ValueError:
+        return str(parent)
 
 
 if sys.platform == "darwin":
@@ -77,7 +117,7 @@ else:
 
 
 class Tile(QFrame):
-    """One launchable item: icon, name, type and its 1-9 key. Name and type can be hidden."""
+    """One launchable item: icon, name, detail line and its 1-9 key, as a tile or a row."""
 
     activated = Signal(str)
     menu_requested = Signal(str, QPoint)
@@ -96,12 +136,14 @@ class Tile(QFrame):
         show_name=True,
         show_type=True,
         star=None,
+        size=DEFAULT_TILE_SIZE,
     ):
         super().__init__()
         self.item_id = item_id
         self.missing = missing
         self._press: QPoint | None = None
-        size = tile_size(show_name, show_type)
+        style_size = size
+        size = tile_size(show_name, show_type, style_size)
         self.setObjectName("tile")
         self.setFixedSize(size)
         self.setAttribute(Qt.WA_Hover)
@@ -111,10 +153,14 @@ class Tile(QFrame):
         self.setToolTip(tooltip)
 
         icon = QLabel()
-        icon.setFixedSize(ICON_SIZE, ICON_SIZE)
+        icon.setFixedSize(icon_size(style_size), icon_size(style_size))
         icon.setPixmap(pixmap)
         if missing:
             icon.setEnabled(False)
+
+        if is_rows(style_size):
+            self._build_row(icon, name, meta, key, missing, show_type, star, size)
+            return
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
@@ -197,6 +243,75 @@ class Tile(QFrame):
             meta_row.addWidget(locate)
         meta_row.addStretch()
         layout.addLayout(meta_row)
+
+    def _build_row(self, icon, name, meta, key, missing, show_type, star, size):
+        """Row layout: the key comes first, then the icon, the name and the location."""
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 0, 8 if missing else 12, 0)
+        layout.setSpacing(10)
+
+        cap = QLabel(str(key) if key else "", objectName="keycap")
+        cap.setAlignment(Qt.AlignCenter)
+        cap.setFixedSize(22, 20)
+        if not key:
+            cap.setStyleSheet(
+                "border: none;"
+            )  # Keeps the column, so names still line up.
+        layout.addWidget(cap)
+        layout.addWidget(icon)
+
+        locate = None
+        if missing:
+            locate = QPushButton("Locate", objectName="secondary")
+            locate.setCursor(Qt.PointingHandCursor)
+            locate.clicked.connect(lambda: self.locate_requested.emit(self.item_id))
+            locate.ensurePolished()
+        mark = None
+        if star is not None:
+            mark = QLabel(objectName="starMark")
+            mark.setPixmap(star)
+            mark.setToolTip("Starred")
+
+        margins = layout.contentsMargins()
+        text_width = size.width() - margins.left() - margins.right()
+        text_width -= cap.width() + icon.width() + 2 * layout.spacing()
+        if mark is not None:
+            text_width -= star.deviceIndependentSize().width() + layout.spacing()
+        if locate is not None:
+            text_width -= locate.sizeHint().width() + layout.spacing()
+
+        text = QVBoxLayout()
+        text.setSpacing(2)
+        text.setContentsMargins(0, 0, 0, 0)
+        text.addStretch()  # The stretches above and below centre the lines in the row.
+        name_label = QLabel(objectName="tileName")
+        name_label.setProperty("missing", missing and not show_type)
+        name_label.ensurePolished()
+        name_label.setText(
+            QFontMetrics(name_label.font()).elidedText(
+                name, Qt.ElideMiddle, int(text_width)
+            )
+        )
+        text.addWidget(name_label)
+        if show_type:
+            meta_label = QLabel(objectName="tileMeta")
+            meta_label.setProperty("missing", missing)
+            meta_label.setProperty("mono", not missing)
+            meta_label.ensurePolished()
+            meta_label.setText(
+                "Not found"
+                if missing
+                else QFontMetrics(meta_label.font()).elidedText(
+                    meta, Qt.ElideMiddle, int(text_width)
+                )
+            )
+            text.addWidget(meta_label)
+        text.addStretch()
+        layout.addLayout(text, 1)
+        if mark is not None:
+            layout.addWidget(mark)
+        if locate is not None:
+            layout.addWidget(locate)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -342,6 +457,8 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+K"), self, self._focus_search)
         QShortcut(QKeySequence("Ctrl+F"), self, self._focus_search)
         QShortcut(QKeySequence(Qt.Key_Escape), self, self._clear_search)
+        for keys, step in (("Ctrl+=", 1), ("Ctrl++", 1), ("Ctrl+-", -1)):
+            QShortcut(QKeySequence(keys), self, lambda step=step: self.step_size(step))
         for n in range(1, 10):
             QShortcut(QKeySequence(str(n)), self, lambda n=n: self.open_nth(n))
 
@@ -471,7 +588,7 @@ class MainWindow(QMainWindow):
         row.addWidget(self.data_button)
         self.view_button = QPushButton(objectName="iconButton")
         self.view_button.setCursor(Qt.PointingHandCursor)
-        self.view_button.setToolTip("Tile labels")
+        self.view_button.setToolTip("Layout and size")
         self.view_button.clicked.connect(self.view_menu)
         row.addWidget(self.view_button)
         self.theme_button = QPushButton(objectName="iconButton")
@@ -514,22 +631,69 @@ class MainWindow(QMainWindow):
         self.add_button.setIcon(line_icon("plus", p["acc_ink"]))
         self.search_action.setIcon(line_icon("search", p["t3"]))
         self.drop_icon.setPixmap(line_icon("download", p["acc"], 24).pixmap(24, 24))
-        self.view_button.setIcon(line_icon("layout-grid", p["t3"]))
-        self.view_button.setIconSize(QSize(16, 16))
+        self._update_view_icon()
         self.theme_button.setIcon(line_icon(THEME_ICONS[self.store.theme], p["t3"]))
         self.theme_button.setIconSize(QSize(16, 16))
         self.theme_button.setToolTip(f"Theme: {self.store.theme.capitalize()}")
         self.rebuild_tabs()
 
+    def _update_view_icon(self) -> None:
+        name = "list" if is_rows(self.store.tile_size) else "layout-grid"
+        self.view_button.setIcon(line_icon(name, self.palette_values["t3"]))
+        self.view_button.setIconSize(QSize(16, 16))
+
     def view_menu(self) -> None:
-        """Let the user hide the name or the type line under each icon."""
+        """Choose rows or tiles and their size with one slider, and hide the label lines."""
         menu = QMenu(self)
-        for label, key in (("Show names", "names"), ("Show types", "types")):
-            action = menu.addAction(label)
-            action.setCheckable(True)
-            action.setChecked(getattr(self.store, f"show_{key}"))
-            action.toggled.connect(lambda on, key=key: self.set_display(**{key: on}))
+
+        panel = QWidget(objectName="sizePanel")
+        column = QVBoxLayout(panel)
+        column.setContentsMargins(12, 8, 12, 8)
+        column.setSpacing(6)
+        top = QHBoxLayout()
+        top.addWidget(QLabel("Size", objectName="menuLabel"))
+        top.addStretch()
+        value = QLabel(SIZE_NAMES[self.store.tile_size], objectName="menuValue")
+        top.addWidget(value)
+        column.addLayout(top)
+        slider = QSlider(Qt.Horizontal, objectName="sizeSlider")
+        slider.setRange(TILE_SIZES[0], TILE_SIZES[-1])
+        slider.setPageStep(1)
+        slider.setFixedWidth(208)
+        slider.setValue(self.store.tile_size)
+        slider.setCursor(Qt.PointingHandCursor)
+        slider.setAccessibleName("Size")
+        column.addWidget(slider)
+        ends = QHBoxLayout()
+        ends.addWidget(QLabel("Rows", objectName="menuHint"))
+        ends.addStretch()
+        ends.addWidget(QLabel("Large tiles", objectName="menuHint"))
+        column.addLayout(ends)
+        slider_action = QWidgetAction(menu)
+        slider_action.setDefaultWidget(panel)
+        menu.addAction(slider_action)
+        menu.addSeparator()
+
+        names = menu.addAction("Show names")
+        names.setCheckable(True)
+        names.setChecked(self.store.show_names)
+        names.toggled.connect(lambda on: self.set_display(names=on))
+        details = menu.addAction("Show details")
+        details.setCheckable(True)
+        details.setChecked(self.store.show_types)
+        details.toggled.connect(lambda on: self.set_display(types=on))
+
+        def size_changed(size: int) -> None:
+            value.setText(SIZE_NAMES[size])
+            names.setEnabled(not is_rows(size))  # Rows always show the name.
+            self.set_display(size=size)
+
+        names.setEnabled(not is_rows(self.store.tile_size))
+        slider.valueChanged.connect(size_changed)
         self._menu_above(menu, self.view_button)
+
+    def step_size(self, step: int) -> None:
+        self.set_display(size=self.store.tile_size + step)
 
     def _menu_above(self, menu: QMenu, button: QPushButton) -> None:
         top_left = button.rect().topLeft()
@@ -606,6 +770,7 @@ class MainWindow(QMainWindow):
 
     def set_display(self, **kwargs) -> None:
         self.store.set_display(**kwargs)
+        self._update_view_icon()
         self.refresh()
 
     def cycle_theme(self) -> None:
@@ -713,13 +878,14 @@ class MainWindow(QMainWindow):
 
     def _pixmap(self, item: Item):
         scale = self.devicePixelRatioF()
+        size = icon_size(self.store.tile_size)
         p = self.palette_values
         if item.kind == "link":
             return self.icons.pixmap_for_link(
-                url_domain(item.target), p["raised"], p["t2"], scale
+                url_domain(item.target), p["raised"], p["t2"], scale, size
             )
         return self.icons.pixmap_for_path(
-            resolve_target(item, self.store.base_dir), scale
+            resolve_target(item, self.store.base_dir), scale, size
         )
 
     def refresh(self) -> None:
@@ -743,15 +909,20 @@ class MainWindow(QMainWindow):
 
         acc = self.palette_values["acc"]
         star = line_icon("star", acc, 12, fill=acc).pixmap(12, 12)
+        size = self.store.tile_size
         tiles = []
         for index, (tab, item) in enumerate(entries):
             missing = not self.store.target_exists(item)
-            meta = KIND_LABELS[item.kind]
-            if item.kind == "link" and item.label != url_domain(item.target):
-                meta = url_domain(item.target)
+            full = resolve_target(item, self.store.base_dir)
+            if is_rows(size):
+                # Rows have room for where the item is, not only what it is.
+                meta = full if item.kind == "link" else short_location(full)
+            else:
+                meta = KIND_LABELS[item.kind]
+                if item.kind == "link" and item.label != url_domain(item.target):
+                    meta = url_domain(item.target)
             if query or starred_view:
                 meta = f"{tab.name} · {meta}"
-            full = resolve_target(item, self.store.base_dir)
             tile = Tile(
                 item.id,
                 item.label,
@@ -763,6 +934,7 @@ class MainWindow(QMainWindow):
                 self.store.show_names,
                 self.store.show_types,
                 star if self.store.is_starred(item.id) else None,
+                size,
             )
             tile.activated.connect(self.open_item)
             tile.menu_requested.connect(self.item_menu)
@@ -770,7 +942,7 @@ class MainWindow(QMainWindow):
             tile.drag_finished.connect(self._end_drag)
             tiles.append(tile)
         self.grid.set_tiles(
-            tiles, tile_size(self.store.show_names, self.store.show_types)
+            tiles, tile_size(self.store.show_names, self.store.show_types, size)
         )
 
         if tiles:
